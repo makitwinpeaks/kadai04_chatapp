@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>瞬く夜泣き星</title>
+<script src="js/jquery-2.1.3.min.js"></script>
+<link rel="stylesheet" href="css/style.css">
+<meta name="viewport" content="width=device-width">
+</head>
+
+</head>
+<body>
+
+<!-- コンテンツ表示画面 -->
+
+<div>
+    <div id="output" style="overflow: auto; height: 700px;"></div>
+    <div> お星さまの名前：<input type="text" id="uname"> </div>
+    <div>
+        <textarea id="text" cols="50" rows="4"></textarea>
+        <button id="send">送信</button>
+    </div>
+    
+</div>
+<!--/ コンテンツ表示画面 -->
+
+
+
+<!-- JQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<!-- JQuery -->
+
+
+<!--** 以下Firebase **-->
+
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, push, update, remove, set, onChildAdded, onChildChanged, onChildRemoved } 
+    from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+  
+
+    //以下APIキー情報は別ファイルに保存
+    // Your web app's Firebase configuration
+   
+    //APIキー情報ここまで
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);//firebaseのキーを使ってfirebaseにアクセスする
+    const db = getDatabase(app);//リアルタイムデータべースにアクセスする
+    const dbRef = ref(db,"chat");//どこのレイヤーにデータを入れるか定義
+
+
+    //データ登録時// クリックしたらオブジェクト変数作成、ユニークキー作成、FirebaseとRealtimeDBにデータ登録。
+    $("#send").on("click",function(){ 
+      
+        //日時を取得。new Dateの後に年月日時間を取得する。
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = now.getMonth()+1;
+            var day = now.getDate();
+            var hour = now.getHours() ;	// 時
+            var minute = now.getMinutes() ;	// 分
+            var second = now.getSeconds() ;	// 秒
+        //savaDateを定義。
+            var saveDate = year+'年'+month+'月'+day+'日'+hour+'時'+minute+'分'+second+'秒';
+            console.log(saveDate); 
+      
+        const msg = {
+         uname : $("#uname").val(), //object変数の中ではconstという定義はない
+         text : $("#text").val(),
+         date : saveDate,
+         star : 0
+        }
+
+       console.log(msg)
+     
+        const newPostRef = push(dbRef);//ユニークキーを生成して、push可能な状況を作成
+        console.log(newPostRef)
+        set(newPostRef,msg);// ユニークキーが付与されたmsgが格納（keyとvalueセットで格納）
+
+    }); 
+
+    //データ受信時//　１つずつオブジェクトが入ってくる
+     //最初にデータ取得とonsnapshotでリアルタイムにデータを取得
+    onChildAdded(dbRef,function(data){ //常時監視する。←だけだとdataは空
+        const msg = data.val();//valueを取得　←これではじめてdataとってこれる
+        const key = data.key;//keyを取得。削除・更新に必須だからとってくる！！
+        let h ='<p id="'+key+'">'; //pタグを指定して削除したいので、idを振っておく
+            h += '<span class="uname">' + msg.uname+ '</span>';
+           // h += '<br>';
+            h += '<span class="date">' + msg.date+ '</span>';
+            h += '<span class="remove" data-key="'+key+'">🚮</span>';
+            h += '<span class="update" data-key="'+key+'">🔄</span>';
+            h += '<br>';
+            h += '<span contentEditable="true" id="'+key+'_update">'+msg.text+'</span>';
+            h += '<span class="star" data-key="'+key+'">💕</span>';
+            h += '</p>';
+            $("#output").prepend(h);
+
+
+            //star = 1のときhtml差し替えて星画像表示
+            if(msg.star == 1){  
+
+                console.log("oK");
+
+              // $("#"+data.key).remove(); //対象を削除
+              //☝これすると、キーも消えてしまうので、どこに画像差し込むかわからなくなる
+                
+              //星を表示
+                const key = data.key;//keyを取得。削除・更新に必須だからとってくる！！
+                let h ='<p id="'+key+'">'; //pタグを指定して削除したいので、idを振っておく
+                    h += '<img src="./img/starfall.gif" alt="kirakira" width="100px">';
+                 //   h += '<video autoplay muted src="./img/glitter-parts01.mov"></video>';
+                    h += '</p>';
+                $("#"+data.key).html(h);
+                //$("#"+key).fadeOut(10000);
+            }
+
+
+    });
+
+    //削除イベント
+    $("#output").on("click", ".remove", function(){
+            const key = $(this).attr("data-key"); //クリックしたところのキーを取得
+            const remove_item = ref(db, "chat/"+key);
+            remove (remove_item);//Firebaseデータ削除関数
+    });
+
+    //更新イベント
+        //パターン1. テキストを編集して更新。
+        $("#output").on("click", ".update", function(){
+            const key = $(this).attr("data-key"); //クリックしたところのキーを取得
+            update(ref(db, "chat/"+key), {
+                text: $("#"+key+'_update').html() //chatの中のキーに更新データを上書き。
+            });
+        });
+        
+        //パターン2. 💕を押下したらstarフラグをたてる。
+       $("#output").on("click", ".star", function(){
+            const key = $(this).attr("data-key"); //クリックしたところのキーを取得
+            update(ref(db, "chat/"+key), {
+                star: 1 
+             });
+        });
+
+    //削除処理がFireBase側で実行されたらイベント発生！
+    onChildRemoved(dbRef, (data) => {
+        $("#"+data.key).remove(); //DOM操作関数（対象を削除）
+    });
+
+    //更新処理がFireBase側で実行されたらイベント発生！
+        onChildChanged(dbRef, (data) => {
+            const msg = data.val();//valueを取得
+            //star = 1のときテキスト消去して星画像表示
+            if(msg.star == 1){  
+
+                console.log("oK");
+              // $("#"+data.key).remove(); //対象を削除←←これであってる？？？？
+                //星を表示
+         
+                const key = data.key;//keyを取得。削除・更新に必須だからとってくる！！
+                let h ='<p id="'+key+'">'; //pタグを指定して削除したいので、idを振っておく
+                    h += '<img src="./img/starfall.gif" alt="kirakira">';
+                    h += '</p>';
+                $("#"+data.key).html(h);
+                //$("#"+key).fadeOut(10000);
+            }
+
+            //star=0のときテキスト編集
+            else{   
+                     $("#"+data.key+'_update').html(msg.text);
+                     $("#"+data.key+'_update').fadeOut(800).fadeIn(800);
+                 }
+    });
+            
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

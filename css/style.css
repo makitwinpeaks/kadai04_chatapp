@@ -1,0 +1,55 @@
+
+
+html{
+    font-size:100%; /*ユーザー設定の文字サイズを正しく反映*/
+    /* width: 1200px; */
+}
+
+
+
+body {
+    background-image: url("../img/background01.jpg");
+    /* background-repeat: no-repeat; */
+    /* width: 1200px; */
+    margin:0;
+    padding:0;
+    text-align:left;
+    font-size: 24px;
+}
+
+
+div{
+    text-align: center;
+    color:#fff
+}
+
+.date{
+    font-size: 10px;
+
+}
+
+.uname
+{
+    font-size: 18px;
+}
+.update
+{
+    font-size: 18px ;
+}
+.remove{
+    font-size: 18px ;
+
+}
+img{
+    width: 200px;
+    height: 100px;
+    object-fit: cover;
+    
+ 
+
+
+}
+    
+
+
+    
