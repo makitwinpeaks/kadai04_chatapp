@@ -13,6 +13,8 @@ kadai04_chat
 
 https://makitwinpeaks.github.io/kadai04_chatapp/
 
+※APIキー部分削除していますので、動作しません。
+
 ## ④工夫した点・こだわった点
 
 - 真夜中に暗い部屋でスマホで画面を開く想定とし、暗い夜空の背景を採用
